@@ -12,6 +12,10 @@ const dbConnect = async () => {
     try {
         await sequelize.authenticate();
         console.log("Connected to the database!");
+        
+        // Sincroniza los modelos con la base de datos
+        await sequelize.sync({ force: false });
+        console.log("All models were synchronized successfully.");
     } catch (error) {
         console.error("Database connection error:", error);
     }
