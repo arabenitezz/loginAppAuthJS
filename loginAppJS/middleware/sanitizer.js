@@ -3,7 +3,7 @@ const { body, validationResult } = require('express-validator');
 const sanitizeUser = [
     body('email').trim().escape().isEmail().normalizeEmail(),
     body('username').trim().escape().isLength({ min: 3 }),
-    body('password').trim().isLength({ min: 6 }),
+    body('password').trim().isLength({ min: 5 }),
     (req, res, next) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {

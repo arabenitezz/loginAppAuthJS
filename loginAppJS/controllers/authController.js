@@ -67,22 +67,11 @@ const login = async (req, res) => {
         req.session.userId = user.id;
         req.session.role = user.role;
 
-        // Generar nuevo token CSRF
-        const csrfToken = req.csrfToken(); // Asegúrate de que csrfToken esté disponible aquí
-        await User.update({ csrfToken }, { where: { id: user.id } });
-
-        // Configurar la cookie CSRF
-        res.cookie('XSRF-TOKEN', csrfToken, {
-            httpOnly: false, // Permite el acceso al token desde el frontend
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Strict'
-        });
 
         res.status(200).json({ 
             message: `Inicio de sesión exitoso: ${user.username}`, 
             token: token 
         });
-
     } catch (error) {
         console.error("Error en el inicio de sesión:", error);
         res.status(500).json({ message: "Error en el inicio de sesión." });
@@ -90,3 +79,4 @@ const login = async (req, res) => {
 };
 
 module.exports = { register, login };
+

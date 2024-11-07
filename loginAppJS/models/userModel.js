@@ -22,11 +22,7 @@ const User = sequelize.define('User', {
         type: DataTypes.ENUM('admin', 'user'),
         allowNull: false,
     },
-    csrfToken: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: null,
-    },
+    
 }, {
     timestamps: true, // agrega automáticamente createdAt y updatedAt
 });
