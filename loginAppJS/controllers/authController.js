@@ -6,18 +6,18 @@ const register = async (req, res) => {
     try {
         const { email, username, password, role } = req.body;
 
-        // Verificar que todos los campos estén completos
+        // Validar que todos los campos están completos
         if (!email || !username || !password || !role) {
             return res.status(400).json({ message: "Todos los campos son obligatorios." });
         }
 
-        // Verificar si el usuario ya existe
+        // Comprobar si el usuario ya existe en la base de datos
         const existingUser = await User.findOne({ where: { username } });
         if (existingUser) {
             return res.status(400).json({ message: "El nombre de usuario ya está en uso." });
         }
 
-        // Hashear la contraseña
+        // Hashear la contraseña antes de guardarla
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Crear y guardar el nuevo usuario
@@ -28,53 +28,65 @@ const register = async (req, res) => {
             role,
         });
 
-        res.status(201).json({ message: `Usuario registrado con éxito: ${newUser.username}` });
+        return res.status(201).json({ message: `Usuario registrado con éxito: ${newUser.username}` });
     } catch (error) {
         console.error("Error en el registro:", error);
-        res.status(500).json({ message: "Error en el registro de usuario." });
+        return res.status(500).json({ message: "Error en el registro de usuario." });
     }
 };
 
 const login = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { email, username, password } = req.body;
 
-        // Verificar que todos los campos estén completos
-        if (!username || !password) {
+        // Validar que los campos de inicio de sesión están completos
+        if (!email || !username || !password) {
             return res.status(400).json({ message: "Todos los campos son obligatorios." });
         }
 
         // Buscar el usuario en la base de datos
         const user = await User.findOne({ where: { username } });
         if (!user) {
-            return res.status(400).json({ message: "Nombre de usuario o contraseña incorrectos." });
+            return res.status(400).json({ message: "Email, nombre de usuario o contraseña incorrectos." });
         }
 
-        // Verificar la contraseña
+        // Buscar el email en la base de datos
+        const userEmail = await User.findOne({ where: { email } });
+        if (!userEmail) {
+            return res.status(400).json({ message: "Email, nombre de usuario o contraseña incorrectos." });
+        }
+
+        // Verificar si la contraseña proporcionada coincide con la almacenada
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return res.status(400).json({ message: "Nombre de usuario o contraseña incorrectos." });
+            return res.status(400).json({ message: "Email, nombre de usuario o contraseña incorrectos." });
         }
 
-        // Crear el token JWT
-        const token = jwt.sign(
-            { id: user.id, role: user.role }, 
-            process.env.JWT_SECRET,
-            { expiresIn: "1h" }
-        );
+        // Regenerar la sesión para asegurar el almacenamiento de datos de sesión
+        req.session.regenerate((err) => {
+            if (err) {
+                console.error("Error en la regeneración de la sesión:", err);
+                return res.status(500).json({ message: "Error en la sesión" });
+            }
 
-        // Crear sesión
-        req.session.userId = user.id;
-        req.session.role = user.role;
+            req.session.userId = user.id;
+            req.session.role = user.role;
 
+            // Generar el token JWT para autenticar al usuario
+            const token = jwt.sign(
+                { id: user.id, role: user.role },
+                process.env.JWT_SECRET,
+                { expiresIn: "1h" }
+            );
 
-        res.status(200).json({ 
-            message: `Inicio de sesión exitoso: ${user.username}`, 
-            token: token 
+            return res.status(200).json({
+                message: `Inicio de sesión exitoso: ${user.username}`,
+                token: token,
+            });
         });
     } catch (error) {
         console.error("Error en el inicio de sesión:", error);
-        res.status(500).json({ message: "Error en el inicio de sesión." });
+        return res.status(500).json({ message: "Error en el inicio de sesión." });
     }
 };
 
