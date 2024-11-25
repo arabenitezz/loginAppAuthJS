@@ -90,5 +90,25 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const logout = (req, res) => {
+    try {
+        // Destroy the session
+        req.session.destroy((err) => {
+            if (err) {
+                console.error("Error destroying session:", err);
+                return res.status(500).json({ message: "Error durante el cierre de sesión" });
+            }
+
+            // Clear the session cookie
+            res.clearCookie('connect.sid');
+
+            return res.status(200).json({ message: "Sesión cerrada exitosamente" });
+        });
+    } catch (error) {
+        console.error("Logout error:", error);
+        return res.status(500).json({ message: "Error durante el cierre de sesión" });
+    }
+};
+
+module.exports = { register, login, logout };
 
